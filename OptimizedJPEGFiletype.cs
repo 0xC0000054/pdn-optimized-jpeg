@@ -43,6 +43,7 @@ namespace OptimizedJPEG
 
         private enum EdgeBlockOptions
         {
+            None,
             Perfect,
             Trim
         }
@@ -211,10 +212,25 @@ namespace OptimizedJPEG
                     break;
             }
 
+            string edgeOption = string.Empty;
+
+            switch (edge)
+            {
+                case EdgeBlockOptions.None:
+                    edgeOption = string.Empty;
+                    break;
+                case EdgeBlockOptions.Perfect:
+                    edgeOption = "-perfect";
+                    break;
+                case EdgeBlockOptions.Trim:
+                    edgeOption = "-trim";
+                    break;
+            }
+
             return string.Format("-copy {0} {1} {2} {3} {4} {5}", new object[] { copyOption,
                     optimize ? "-optimize" : string.Empty,
                     progressive ? "-progressive" : string.Empty,
-                    edge == EdgeBlockOptions.Perfect ? "-perfect" : "-trim",
+                    edgeOption,
                     tempInput,
                     tempOutput});
         }
