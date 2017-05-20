@@ -274,9 +274,18 @@ namespace OptimizedJPEG
                 process.WaitForExit();
             }
 
-            byte[] data = File.ReadAllBytes(tempOutput);
-            output.Write(data, 0, data.Length);
+            const int BufferSize = 4096;
 
+            using (FileStream stream = new FileStream(tempOutput, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize))
+            {
+                byte[] buffer = new byte[BufferSize];
+                int bytesRead = 0;
+
+                while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
+                {
+                    output.Write(buffer, 0, bytesRead);
+                } 
+            }
 
             File.Delete(tempInput);
             File.Delete(tempOutput);
