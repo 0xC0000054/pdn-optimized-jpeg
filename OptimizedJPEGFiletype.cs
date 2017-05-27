@@ -83,7 +83,7 @@ namespace OptimizedJPEG
                 new BooleanProperty(PropertyNames.OptimizeEncoding, true),
                 new BooleanProperty(PropertyNames.ProgressiveEncoding, false),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.CopyOptions, CopyOptions.Comments, false),
-                StaticListChoiceProperty.CreateForEnum(PropertyNames.EdgeOptions, EdgeBlockOptions.Perfect, false)
+                StaticListChoiceProperty.CreateForEnum(PropertyNames.EdgeOptions, EdgeBlockOptions.None, false)
             };
 
             return new PropertyCollection(props);
