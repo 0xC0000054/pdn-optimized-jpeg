@@ -65,6 +65,8 @@ namespace OptimizedJPEG
             }
         }
 
+        private static readonly string JpegtranPath = Path.Combine(Path.GetDirectoryName(typeof(OptimizedJPEGFiletype).Assembly.Location), "jpegtran.exe");
+
         private readonly string tempInput;
         private readonly string tempOutput;
 
@@ -260,8 +262,7 @@ namespace OptimizedJPEG
 
             using (Process process = new Process())
             {
-                string path = Path.Combine(Path.GetDirectoryName(typeof(OptimizedJPEGFiletype).Assembly.Location), "jpegtran.exe");
-                ProcessStartInfo psi = new ProcessStartInfo(path, BuildArguments(token))
+                ProcessStartInfo psi = new ProcessStartInfo(JpegtranPath, BuildArguments(token))
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
