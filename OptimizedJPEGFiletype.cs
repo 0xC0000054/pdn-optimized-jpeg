@@ -180,7 +180,27 @@ namespace OptimizedJPEG
             return null;
         }
 
-        private string BuildArguments(PropertyBasedSaveConfigToken token)
+        private static unsafe bool IsGrayscaleImage(Surface scratchSurface)
+        {
+            for (int y = 0; y < scratchSurface.Height; y++)
+            {
+                ColorBgra* ptr = scratchSurface.GetRowAddressUnchecked(y);
+                ColorBgra* ptrEnd = ptr + scratchSurface.Width;
+
+                while (ptr < ptrEnd)
+                {
+                    if (!(ptr->R == ptr->G && ptr->G == ptr->B))
+                    {
+                        return false;
+                    }
+                    ptr++;
+                }
+            }
+
+            return true;
+        }
+
+        private string BuildArguments(PropertyBasedSaveConfigToken token, Surface scratchSurface)
         {
             bool optimize = token.GetProperty<BooleanProperty>(PropertyNames.OptimizeEncoding).Value;
             bool progressive = token.GetProperty<BooleanProperty>(PropertyNames.ProgressiveEncoding).Value;
@@ -201,9 +221,10 @@ namespace OptimizedJPEG
                     break;
             }
 
-            return string.Format("-copy {0} {1} {2} {3} {4}", new object[] { copyOption,
+            return string.Format("-copy {0} {1} {2} {3} {4} {5}", new object[] { copyOption,
                     optimize ? "-optimize" : string.Empty,
                     progressive ? "-progressive" : string.Empty,
+                    IsGrayscaleImage(scratchSurface) ? "-grayscale" : string.Empty,
                     tempInput,
                     tempOutput});
         }
@@ -233,7 +254,7 @@ namespace OptimizedJPEG
 
             using (Process process = new Process())
             {
-                ProcessStartInfo psi = new ProcessStartInfo(JpegtranPath, BuildArguments(token))
+                ProcessStartInfo psi = new ProcessStartInfo(JpegtranPath, BuildArguments(token, scratchSurface))
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
