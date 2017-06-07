@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("OptimizedJPEG")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("null54")]
 [assembly: AssemblyProduct("OptimizedJPEG")]
 [assembly: AssemblyCopyright("Copyright © 2012-2017 Nicholas Hayes (aka null54)")]
 [assembly: AssemblyTrademark("")]
