@@ -46,13 +46,13 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="PaintDotNet.Base">
-      <HintPath>..\..\..\..\..\..\Dev_projects\PSFilterPdn\Refrences\PaintDotNet.Base.dll</HintPath>
+      <HintPath>C:\Dev_projects\PSFilterPdn\References\PaintDotNet.Base.dll</HintPath>
     </Reference>
     <Reference Include="PaintDotNet.Core">
-      <HintPath>..\..\..\..\..\..\Dev_projects\PSFilterPdn\Refrences\PaintDotNet.Core.dll</HintPath>
+      <HintPath>C:\Dev_projects\PSFilterPdn\References\PaintDotNet.Core.dll</HintPath>
     </Reference>
     <Reference Include="PaintDotNet.Data">
-      <HintPath>..\..\..\..\..\..\Dev_projects\PSFilterPdn\Refrences\PaintDotNet.Data.dll</HintPath>
+      <HintPath>C:\Dev_projects\PSFilterPdn\References\PaintDotNet.Data.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
