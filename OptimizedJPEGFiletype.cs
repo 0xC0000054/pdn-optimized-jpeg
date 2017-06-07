@@ -221,7 +221,7 @@ namespace OptimizedJPEG
                     break;
             }
 
-            return string.Format("-copy {0} {1} {2} {3} {4} {5}", new object[] { copyOption,
+            return string.Format("-copy {0} {1} {2} {3} \"{4}\" \"{5}\"", new object[] { copyOption,
                     optimize ? "-optimize" : string.Empty,
                     progressive ? "-progressive" : string.Empty,
                     IsGrayscaleImage(scratchSurface) ? "-grayscale" : string.Empty,
