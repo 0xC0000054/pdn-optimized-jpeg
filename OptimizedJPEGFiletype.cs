@@ -41,20 +41,12 @@ namespace OptimizedJPEG
             All
         }
 
-        private enum EdgeBlockOptions
-        {
-            None,
-            Perfect,
-            Trim
-        }
-
         private enum PropertyNames
         {
             Quality,
             OptimizeEncoding,
             ProgressiveEncoding,
-            CopyOptions,
-            EdgeOptions
+            CopyOptions
         }
 
         internal static string StaticName
@@ -84,8 +76,7 @@ namespace OptimizedJPEG
                 new Int32Property(PropertyNames.Quality, 95, 0, 100),
                 new BooleanProperty(PropertyNames.OptimizeEncoding, true),
                 new BooleanProperty(PropertyNames.ProgressiveEncoding, false),
-                StaticListChoiceProperty.CreateForEnum(PropertyNames.CopyOptions, CopyOptions.Comments, false),
-                StaticListChoiceProperty.CreateForEnum(PropertyNames.EdgeOptions, EdgeBlockOptions.None, false)
+                StaticListChoiceProperty.CreateForEnum(PropertyNames.CopyOptions, CopyOptions.Comments, false)
             };
 
             return new PropertyCollection(props);
@@ -104,9 +95,6 @@ namespace OptimizedJPEG
 
             info.SetPropertyControlValue(PropertyNames.CopyOptions, ControlInfoPropertyNames.DisplayName, "Metadata Copy Options");
             info.SetPropertyControlType(PropertyNames.CopyOptions, PropertyControlType.RadioButton);
-
-            info.SetPropertyControlValue(PropertyNames.EdgeOptions, ControlInfoPropertyNames.DisplayName, "Edge Block Options");
-            info.SetPropertyControlType(PropertyNames.EdgeOptions, PropertyControlType.RadioButton);
 
             return info;
         }
@@ -197,7 +185,6 @@ namespace OptimizedJPEG
             bool optimize = token.GetProperty<BooleanProperty>(PropertyNames.OptimizeEncoding).Value;
             bool progressive = token.GetProperty<BooleanProperty>(PropertyNames.ProgressiveEncoding).Value;
             CopyOptions copy = (CopyOptions)token.GetProperty(PropertyNames.CopyOptions).Value;
-            EdgeBlockOptions edge = (EdgeBlockOptions)token.GetProperty(PropertyNames.EdgeOptions).Value;
 
             string copyOption = string.Empty;
 
@@ -214,25 +201,9 @@ namespace OptimizedJPEG
                     break;
             }
 
-            string edgeOption = string.Empty;
-
-            switch (edge)
-            {
-                case EdgeBlockOptions.None:
-                    edgeOption = string.Empty;
-                    break;
-                case EdgeBlockOptions.Perfect:
-                    edgeOption = "-perfect";
-                    break;
-                case EdgeBlockOptions.Trim:
-                    edgeOption = "-trim";
-                    break;
-            }
-
-            return string.Format("-copy {0} {1} {2} {3} {4} {5}", new object[] { copyOption,
+            return string.Format("-copy {0} {1} {2} {3} {4}", new object[] { copyOption,
                     optimize ? "-optimize" : string.Empty,
                     progressive ? "-progressive" : string.Empty,
-                    edgeOption,
                     tempInput,
                     tempOutput});
         }
