@@ -1,6 +1,6 @@
 # pdn-optimized-jpeg
 
-A [Paint.NET](http://www.getpaint.net) FileType plugin that optimizes JPEG image using jpegtran.
+A [Paint.NET](http://www.getpaint.net) FileType plugin that optimizes JPEG images using jpegtran.
 
 ## How to install the plugin
 
