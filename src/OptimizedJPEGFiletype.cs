@@ -28,6 +28,7 @@ using System.IO;
 using PaintDotNet;
 using PaintDotNet.IndirectUI;
 using PaintDotNet.PropertySystem;
+using PaintDotNet.Rendering;
 
 namespace OptimizedJPEG
 {
@@ -58,12 +59,13 @@ namespace OptimizedJPEG
         }
 
         private static readonly string JpegtranPath = Path.Combine(Path.GetDirectoryName(typeof(OptimizedJPEGFiletype).Assembly.Location), "jpegtran.exe");
+        private static readonly IReadOnlyList<string> FileExtensions = new string[] { ".jpg", ".jpeg", ".jpe", ".jfif" };
 
         private readonly string tempInput;
         private readonly string tempOutput;
 
         public OptimizedJPEGFiletype()
-            : base(StaticName, FileTypeFlags.SupportsLoading | FileTypeFlags.SupportsSaving, new string[] { ".jpg", ".jpeg", ".jpe", ".jfif" })
+            : base(StaticName, new FileTypeOptions() { LoadExtensions = FileExtensions, SaveExtensions = FileExtensions })
         {
             this.tempInput = Path.Combine(Path.GetTempPath(), "inputTemp.jpg");
             this.tempOutput = Path.Combine(Path.GetTempPath(), "optimizedTemp.jpg");
@@ -149,7 +151,7 @@ namespace OptimizedJPEG
 
             Metadata metaData = srcDoc.Metadata;
 
-            foreach (string key in metaData.GetKeys(Metadata.ExifSectionName))
+            foreach (string key in metaData.GetNames(Metadata.ExifSectionName))
             {
                 string blob = metaData.GetValue(Metadata.ExifSectionName, key);
                 PropertyItem pi = PaintDotNet.SystemLayer.PropertyItem2.FromBlob(blob).ToPropertyItem();
@@ -184,7 +186,7 @@ namespace OptimizedJPEG
         {
             for (int y = 0; y < scratchSurface.Height; y++)
             {
-                ColorBgra* ptr = scratchSurface.GetRowAddressUnchecked(y);
+                ColorBgra* ptr = scratchSurface.GetRowPointerUnchecked(y);
                 ColorBgra* ptrEnd = ptr + scratchSurface.Width;
 
                 while (ptr < ptrEnd)
@@ -237,11 +239,8 @@ namespace OptimizedJPEG
             EncoderParameters encoderOptions = new EncoderParameters(1);
             encoderOptions.Param[0] = new EncoderParameter(Encoder.Quality, quality);
 
-            scratchSurface.Clear(ColorBgra.White);
-            using (RenderArgs ra = new RenderArgs(scratchSurface))
-            {
-                input.Render(ra, false);
-            }
+            scratchSurface.Fill(ColorBgra.White);
+            input.CreateRenderer().Render(scratchSurface);
 
             using (FileStream fs = new FileStream(tempInput, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {

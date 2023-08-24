@@ -150,7 +150,9 @@ namespace PaintDotNet.SystemLayer
                 SerializationFallbackBinder sfb = new SerializationFallbackBinder();
                 sfb.AddAssembly(Assembly.GetExecutingAssembly());
                 bf.Binder = sfb;
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
                 pi2 = (PropertyItem2)bf.Deserialize(ms);
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
             }
 
             return pi2;
