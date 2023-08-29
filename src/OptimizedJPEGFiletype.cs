@@ -68,8 +68,8 @@ namespace OptimizedJPEG
         public OptimizedJPEGFiletype(IServiceProvider services)
             : base(StaticName, new FileTypeOptions() { LoadExtensions = FileExtensions, SaveExtensions = FileExtensions })
         {
-            tempInput = Path.Combine(Path.GetTempPath(), "inputTemp.jpg");
-            tempOutput = Path.Combine(Path.GetTempPath(), "optimizedTemp.jpg");
+            tempInput = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            tempOutput = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             this.services = services;
         }
 
