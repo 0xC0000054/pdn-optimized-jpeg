@@ -1,0 +1,46 @@
+﻿root = true
+
+[*.{cs,vb}]
+
+vsspell_section_id = 30a86b75973f41d3b6fe30b8f7950859
+vsspell_ignored_words_30a86b75973f41d3b6fe30b8f7950859 = File:IgnoredWords.dic
+
+indent_style                                          = space
+indent_size                                           = 4
+trim_trailing_whitespace                              = true
+
+# IDE0270: Use coalesce expression
+dotnet_style_coalesce_expression = false
+
+# IDE0090: Simplify 'new' expression
+csharp_style_implicit_object_creation_when_type_is_apparent = false
+
+# IDE0057: Use range operator
+csharp_style_prefer_range_operator = false
+
+# Newline settings
+csharp_new_line_before_open_brace                     = all
+csharp_new_line_before_else                           = true
+csharp_new_line_before_catch                          = true
+csharp_new_line_before_finally                        = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types     = true
+csharp_new_line_between_query_expression_clauses      = true
+
+# Expression-bodied member settings
+csharp_style_expression_bodied_methods                = false : silent
+csharp_style_expression_bodied_constructors           = false : silent
+csharp_style_expression_bodied_operators              = false : silent
+csharp_style_expression_bodied_properties             = true : silent
+csharp_style_expression_bodied_indexers               = true : silent
+csharp_style_expression_bodied_accessors              = true : silent
+
+# Code block settings
+csharp_prefer_braces                                  = true : warning
+
+# "This." qualifier settings
+dotnet_style_qualification_for_field                  = false : suggestion
+dotnet_style_qualification_for_property               = false : suggestion
+dotnet_style_qualification_for_method                 = false : suggestion
+dotnet_style_qualification_for_event                  = false : suggestion
+
