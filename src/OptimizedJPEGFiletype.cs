@@ -1,7 +1,7 @@
 ﻿/////////////////////////////////////////////////////////////////////////////////
 //
 // Optimized JPEG FileType Plugin for Paint.NET
-// 
+//
 // This software is provided under the MIT License:
 //   Copyright (c) 2012-2017, 2023 Nicholas Hayes
 //
@@ -63,12 +63,14 @@ namespace OptimizedJPEG
 
         private readonly string tempInput;
         private readonly string tempOutput;
+        private readonly IServiceProvider services;
 
-        public OptimizedJPEGFiletype()
+        public OptimizedJPEGFiletype(IServiceProvider services)
             : base(StaticName, new FileTypeOptions() { LoadExtensions = FileExtensions, SaveExtensions = FileExtensions })
         {
-            this.tempInput = Path.Combine(Path.GetTempPath(), "inputTemp.jpg");
-            this.tempOutput = Path.Combine(Path.GetTempPath(), "optimizedTemp.jpg");
+            tempInput = Path.Combine(Path.GetTempPath(), "inputTemp.jpg");
+            tempOutput = Path.Combine(Path.GetTempPath(), "optimizedTemp.jpg");
+            this.services = services;
         }
 
 
@@ -103,10 +105,14 @@ namespace OptimizedJPEG
 
         protected override Document OnLoad(Stream input)
         {
-            using (Image image = Image.FromStream(input))
+            IFileTypeInfo info = services.GetService<IFileTypesService>()?.FindFileTypeForLoadingExtension(".jpg");
+
+            if (info is null)
             {
-                return Document.FromGdipImage(image, false);
+                throw new InvalidOperationException($"Failed to get the {nameof(IFileTypeInfo)} for the JPEG FileType.");
             }
+
+            return info.GetInstance().Load(input);
         }
 
         private static void LoadProperties(Image dstImage, Document srcDoc)
@@ -276,7 +282,7 @@ namespace OptimizedJPEG
                 while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
                 {
                     output.Write(buffer, 0, bytesRead);
-                } 
+                }
             }
 
             File.Delete(tempInput);

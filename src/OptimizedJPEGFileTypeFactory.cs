@@ -13,11 +13,11 @@ using PaintDotNet;
 
 namespace OptimizedJPEG
 {
-    public sealed class OptimizedJPEGFileTypeFactory : IFileTypeFactory
+    public sealed class OptimizedJPEGFileTypeFactory : IFileTypeFactory2
     {
-        public FileType[] GetFileTypeInstances()
+        public FileType[] GetFileTypeInstances(IFileTypeHost host)
         {
-            return new FileType[] { new OptimizedJPEGFiletype() };
+            return new FileType[] { new OptimizedJPEGFiletype(host.Services) };
         }
     }
 }
