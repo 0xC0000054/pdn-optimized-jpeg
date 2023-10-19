@@ -9,23 +9,12 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-// Portions of this file has been adapted from:
-/////////////////////////////////////////////////////////////////////////////////
-// Paint.NET                                                                   //
-// Copyright (C) dotPDN LLC, Rick Brewster, Tom Jackson, and contributors.     //
-// Portions Copyright (C) Microsoft Corporation. All Rights Reserved.          //
-// See src/Resources/Files/License.txt for full licensing and attribution      //
-// details.                                                                    //
-// .                                                                           //
-/////////////////////////////////////////////////////////////////////////////////
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using PaintDotNet;
+using PaintDotNet.Imaging;
 using PaintDotNet.IndirectUI;
 using PaintDotNet.PropertySystem;
 using PaintDotNet.Rendering;
@@ -47,7 +36,8 @@ namespace OptimizedJPEG
             Quality,
             OptimizeEncoding,
             ProgressiveEncoding,
-            CopyOptions
+            CopyOptions,
+            ChromaSubsampling
         }
 
         internal static string StaticName
@@ -78,118 +68,69 @@ namespace OptimizedJPEG
         {
             List<Property> props = new List<Property>{
                 new Int32Property(PropertyNames.Quality, 95, 0, 100),
+                CreateChromaSubsampling(),
                 new BooleanProperty(PropertyNames.OptimizeEncoding, true),
                 new BooleanProperty(PropertyNames.ProgressiveEncoding, false),
                 StaticListChoiceProperty.CreateForEnum(PropertyNames.CopyOptions, CopyOptions.Comments, false)
             };
 
             return new PropertyCollection(props);
+
+            static StaticListChoiceProperty CreateChromaSubsampling()
+            {
+                object[] valueChoices = new object[]
+                {
+                    JpegYCrCbSubsamplingOption.Subsample444,
+                    JpegYCrCbSubsamplingOption.Subsample440,
+                    JpegYCrCbSubsamplingOption.Subsample422,
+                    JpegYCrCbSubsamplingOption.Subsample420,
+                };
+
+                return new StaticListChoiceProperty(PropertyNames.ChromaSubsampling, valueChoices, 1);
+            }
         }
 
         public override ControlInfo OnCreateSaveConfigUI(PropertyCollection props)
         {
             ControlInfo info = CreateDefaultSaveConfigUI(props);
-            info.SetPropertyControlValue(PropertyNames.Quality, ControlInfoPropertyNames.DisplayName, "Quality");
 
-            info.SetPropertyControlValue(PropertyNames.OptimizeEncoding, ControlInfoPropertyNames.Description, "Optimize Encoding");
-            info.SetPropertyControlValue(PropertyNames.OptimizeEncoding, ControlInfoPropertyNames.DisplayName, string.Empty);
+            PropertyControlInfo qualityPCI = info.FindControlForPropertyName(PropertyNames.Quality);
+            qualityPCI.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Quality";
 
-            info.SetPropertyControlValue(PropertyNames.ProgressiveEncoding, ControlInfoPropertyNames.Description, "Progressive Encoding");
-            info.SetPropertyControlValue(PropertyNames.ProgressiveEncoding, ControlInfoPropertyNames.DisplayName, string.Empty);
+            PropertyControlInfo chromaSubsamplingPCI = info.FindControlForPropertyName(PropertyNames.ChromaSubsampling);
+            chromaSubsamplingPCI.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Chroma Subsampling";
+            chromaSubsamplingPCI.SetValueDisplayName(JpegYCrCbSubsamplingOption.Subsample444, "4:4:4 (Best Quality)");
+            chromaSubsamplingPCI.SetValueDisplayName(JpegYCrCbSubsamplingOption.Subsample440, "4:4:0");
+            chromaSubsamplingPCI.SetValueDisplayName(JpegYCrCbSubsamplingOption.Subsample422, "4:2:2");
+            chromaSubsamplingPCI.SetValueDisplayName(JpegYCrCbSubsamplingOption.Subsample420, "4:2:0 (Best Compression)");
 
-            info.SetPropertyControlValue(PropertyNames.CopyOptions, ControlInfoPropertyNames.DisplayName, "Metadata Copy Options");
-            info.SetPropertyControlType(PropertyNames.CopyOptions, PropertyControlType.RadioButton);
+            PropertyControlInfo optimizeEncodingPCI = info.FindControlForPropertyName(PropertyNames.OptimizeEncoding);
+            optimizeEncodingPCI.ControlProperties[ControlInfoPropertyNames.Description].Value = "Optimize Encoding";
+            optimizeEncodingPCI.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
+
+            PropertyControlInfo progressiveEncodingPCI = info.FindControlForPropertyName(PropertyNames.ProgressiveEncoding);
+            progressiveEncodingPCI.ControlProperties[ControlInfoPropertyNames.Description].Value = "Progressive Encoding";
+            progressiveEncodingPCI.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = string.Empty;
+
+            PropertyControlInfo copyOptionsPCI = info.FindControlForPropertyName(PropertyNames.CopyOptions);
+            copyOptionsPCI.ControlProperties[ControlInfoPropertyNames.DisplayName].Value = "Metadata Copy Options";
+            copyOptionsPCI.ControlType.Value = PropertyControlType.RadioButton;
 
             return info;
         }
 
         protected override Document OnLoad(Stream input)
         {
-            IFileTypeInfo info = services.GetService<IFileTypesService>()?.FindFileTypeForLoadingExtension(".jpg");
+            IFileTypesService fileTypesService = services.GetService<IFileTypesService>() ?? throw new InvalidOperationException($"Failed to get the {nameof(IFileTypesService)}.");
+            IFileTypeInfo jpegFileType = fileTypesService.GetJpegFileType();
 
-            if (info is null)
-            {
-                throw new InvalidOperationException($"Failed to get the {nameof(IFileTypeInfo)} for the JPEG FileType.");
-            }
-
-            return info.GetInstance().Load(input);
+            return jpegFileType.GetInstance().Load(input);
         }
 
-        private static void LoadProperties(Image dstImage, Document srcDoc)
+        private static unsafe bool IsGrayscaleImage(Document input, Surface scratchSurface)
         {
-            Bitmap asBitmap = dstImage as Bitmap;
+            input.CreateRenderer().Render(scratchSurface);
 
-            if (asBitmap != null)
-            {
-                // Sometimes GDI+ does not honor the resolution tags that we
-                // put in manually via the EXIF properties.
-                float dpiX;
-                float dpiY;
-
-                switch (srcDoc.DpuUnit)
-                {
-                    case MeasurementUnit.Centimeter:
-                        dpiX = (float)Document.DotsPerCmToDotsPerInch(srcDoc.DpuX);
-                        dpiY = (float)Document.DotsPerCmToDotsPerInch(srcDoc.DpuY);
-                        break;
-
-                    case MeasurementUnit.Inch:
-                        dpiX = (float)srcDoc.DpuX;
-                        dpiY = (float)srcDoc.DpuY;
-                        break;
-
-                    default:
-                    case MeasurementUnit.Pixel:
-                        dpiX = 1.0f;
-                        dpiY = 1.0f;
-                        break;
-                }
-
-                try
-                {
-                    asBitmap.SetResolution(dpiX, dpiY);
-                }
-                catch (Exception)
-                {
-                    // Ignore error
-                }
-            }
-
-            Metadata metaData = srcDoc.Metadata;
-
-            foreach (string key in metaData.GetNames(Metadata.ExifSectionName))
-            {
-                string blob = metaData.GetValue(Metadata.ExifSectionName, key);
-                PropertyItem pi = PaintDotNet.SystemLayer.PropertyItem2.FromBlob(blob).ToPropertyItem();
-
-                try
-                {
-                    dstImage.SetPropertyItem(pi);
-                }
-                catch (ArgumentException)
-                {
-                    // Ignore error: the image does not support property items
-                }
-            }
-        }
-
-        private static ImageCodecInfo GetImageCodecInfo(ImageFormat format)
-        {
-            ImageCodecInfo[] encoders = ImageCodecInfo.GetImageEncoders();
-
-            foreach (ImageCodecInfo icf in encoders)
-            {
-                if (icf.FormatID == format.Guid)
-                {
-                    return icf;
-                }
-            }
-
-            return null;
-        }
-
-        private static unsafe bool IsGrayscaleImage(Surface scratchSurface)
-        {
             for (int y = 0; y < scratchSurface.Height; y++)
             {
                 ColorBgra* ptr = scratchSurface.GetRowPointerUnchecked(y);
@@ -208,7 +149,7 @@ namespace OptimizedJPEG
             return true;
         }
 
-        private string BuildArguments(PropertyBasedSaveConfigToken token, Surface scratchSurface)
+        private string BuildArguments(PropertyBasedSaveConfigToken token, Document input, Surface scratchSurface)
         {
             bool optimize = token.GetProperty<BooleanProperty>(PropertyNames.OptimizeEncoding).Value;
             bool progressive = token.GetProperty<BooleanProperty>(PropertyNames.ProgressiveEncoding).Value;
@@ -232,7 +173,7 @@ namespace OptimizedJPEG
             return string.Format("-copy {0} {1} {2} {3} -outfile \"{4}\" \"{5}\"", new object[] { copyOption,
                     optimize ? "-optimize" : string.Empty,
                     progressive ? "-progressive" : string.Empty,
-                    IsGrayscaleImage(scratchSurface) ? "-grayscale" : string.Empty,
+                    IsGrayscaleImage(input, scratchSurface) ? "-grayscale" : string.Empty,
                     tempOutput,
                     tempInput});
         }
@@ -240,26 +181,23 @@ namespace OptimizedJPEG
         protected override void OnSaveT(Document input, Stream output, PropertyBasedSaveConfigToken token, Surface scratchSurface, ProgressEventHandler progressCallback)
         {
             int quality = token.GetProperty<Int32Property>(PropertyNames.Quality).Value;
+            JpegYCrCbSubsamplingOption subsampling = (JpegYCrCbSubsamplingOption)token.GetProperty(PropertyNames.ChromaSubsampling).Value;
 
-            ImageCodecInfo icf = GetImageCodecInfo(ImageFormat.Jpeg);
-            EncoderParameters encoderOptions = new EncoderParameters(1);
-            encoderOptions.Param[0] = new EncoderParameter(Encoder.Quality, quality);
+            IFileTypesService fileTypesService = services.GetService<IFileTypesService>() ?? throw new InvalidOperationException($"Failed to get the {nameof(IFileTypesService)}.");
+            IJpegFileType jpegFileType = (IJpegFileType)fileTypesService.GetJpegFileType().GetInstance();
+            IJpegFileTypeSaveToken jpegFileTypeSaveToken = jpegFileType.CreateSaveToken();
 
-            scratchSurface.Fill(ColorBgra.White);
-            input.CreateRenderer().Render(scratchSurface);
+            jpegFileTypeSaveToken.Quality = quality;
+            jpegFileTypeSaveToken.YCrCbSubsampling = subsampling;
 
             using (FileStream fs = new FileStream(tempInput, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
             {
-                using (Bitmap bitmap = scratchSurface.CreateAliasedBitmap())
-                {
-                    LoadProperties(bitmap, input);
-                    bitmap.Save(fs, icf, encoderOptions);
-                }
+                jpegFileType.Save(input, fs, jpegFileTypeSaveToken);
             }
 
             using (Process process = new Process())
             {
-                ProcessStartInfo psi = new ProcessStartInfo(JpegtranPath, BuildArguments(token, scratchSurface))
+                ProcessStartInfo psi = new ProcessStartInfo(JpegtranPath, BuildArguments(token, input, scratchSurface))
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
