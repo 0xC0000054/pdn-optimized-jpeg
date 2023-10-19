@@ -11,6 +11,7 @@ A [Paint.NET](http://www.getpaint.net) FileType plugin that optimizes JPEG image
   --------|----------
   Classic | C:\Program Files\Paint.NET\FileTypes    
   Microsoft Store | Documents\paint.net App Files\FileTypes
+  Portable | <Paint.NET folder>\FileTypes
   
 3. Restart Paint.NET.
 
